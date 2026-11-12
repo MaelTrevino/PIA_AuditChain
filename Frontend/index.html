@@ -73,7 +73,7 @@
         <section class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-3">
             <div class="flex justify-between items-center">
                 <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                    🔑 Hash Criptográfico del Reporte (SHA-256)
+                     Hash Criptográfico del Reporte (SHA-256)
                 </h3>
                 <span class="text-xs text-slate-500 font-mono">Inmutable en Blockchain</span>
             </div>
@@ -212,7 +212,7 @@
                     document.getElementById('txtPresupuesto').innerText = ethers.formatEther(presupuesto) + " ETH";
                 }
 
-                // 🛡️ Blindaje de Hash para que no se sobrescriba si la lectura viene vacía
+                //  Blindaje de Hash para que no se sobrescriba si la lectura viene vacía
                 if (hash && hash !== "0x0000000000000000000000000000000000000000000000000000000000000000") {
                     document.getElementById('txtHashReporte').innerText = hash;
                 }
@@ -250,7 +250,7 @@
                 alert("Transacción enviada. Esperando confirmación...");
                 await tx.wait();
                 
-                // 🔄 Actualización visual inmediata y permanente
+                //  Actualización visual inmediata y permanente
                 document.getElementById('txtHashReporte').innerText = hashVal;
                 const txtEstadoEl = document.getElementById('txtEstado');
                 txtEstadoEl.innerText = "Reporte Entregado";
@@ -273,7 +273,7 @@
                 alert("Liberando fondos en ETH...");
                 await tx.wait();
                 
-                // 🔄 Actualización visual inmediata y permanente a pagado en verde
+                //  Actualización visual inmediata y permanente a pagado en verde
                 document.getElementById('txtPresupuesto').innerText = "0.0 ETH";
                 const txtEstadoEl = document.getElementById('txtEstado');
                 txtEstadoEl.innerText = "Aprobada y Pagada";
