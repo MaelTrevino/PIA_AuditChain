@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuditChain | Plataforma Descentralizada de Auditoría de Ciberseguridad</title>
+    <!-- FAVICON CON TEMÁTICA BLOCKCHAIN / ESCUDO PARA LA WALLET -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2310b981%22><path d=%22M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V13H5V8.4l7-3.89v8.48z%22/></svg>">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Ethers.js v6 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <!-- ENCABEZADO PRINCIPAL -->
+        <header class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/40 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-950/50">
+                    <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                        AuditChain <span class="text-xs font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30">SecureCore</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Gestión inmutable de auditorías de ciberseguridad & Smart Contracts</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <span id="badgeEstadoWallet" class="px-3 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-medium rounded-full flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Modo Lectura
+                </span>
+                <button id="btnWallet" onclick="gestionarConexionWallet()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-5 py-2.5 rounded-xl transition text-sm shadow-lg shadow-emerald-950 flex items-center gap-2 cursor-pointer">
+                    🦊 Conectar Wallet
+                </button>
+            </div>
+        </header>
+
+        <!-- BANNER DE MODO LECTURA -->
+        <div id="readOnlyAlert" class="bg-blue-950/40 border border-blue-500/30 p-4 rounded-xl text-sm text-blue-300 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span>🛡️</span>
+                <p>Estás visualizando la aplicación en <strong>Modo Lectura</strong>. Conecta tu wallet para autorizar transacciones de auditoría.</p>
+            </div>
+        </div>
+
+        <!-- PANEL DE CONTROL E INFORMACIÓN -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                <p class="text-xs text-slate-400 font-mono uppercase tracking-wider">Estado de Auditoría</p>
+                <p id="txtEstado" class="text-lg font-bold text-amber-400 mt-1">Creada (Esperando Auditor)</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                <p class="text-xs text-slate-400 font-mono uppercase tracking-wider">Presupuesto en Custodia</p>
+                <p id="txtPresupuesto" class="text-lg font-bold text-emerald-400 mt-1">0.0 ETH</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                <p class="text-xs text-slate-400 font-mono uppercase tracking-wider">Consorcio (Owner)</p>
+                <p id="txtOwner" class="text-xs font-mono text-slate-300 mt-2 truncate">0x000...000</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                <p class="text-xs text-slate-400 font-mono uppercase tracking-wider">Auditor Asignado</p>
+                <p id="txtAuditor" class="text-xs font-mono text-slate-300 mt-2 truncate">Sin asignar</p>
+            </div>
+        </section>
+
+        <!-- REGISTRO DEL HASH DEL REPORTE -->
+        <section class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-3">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    🔑 Hash Criptográfico del Reporte (SHA-256)
+                </h3>
+                <span class="text-xs text-slate-500 font-mono">Inmutable en Blockchain</span>
+            </div>
+            <div class="bg-slate-950 border border-slate-800/80 p-3 rounded-xl font-mono text-xs text-emerald-400 break-all" id="txtHashReporte">
+                0x0000000000000000000000000000000000000000000000000000000000000000
+            </div>
+        </section>
+
+        <!-- PANELES DE ACCIÓN -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Panel Auditor -->
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                <div class="border-b border-slate-800 pb-3">
+                    <h2 class="text-lg font-bold text-emerald-400 flex items-center gap-2">🔍 Panel del Auditor</h2>
+                    <p class="text-xs text-slate-400">Entrega de evidencias de seguridad</p>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Hash del PDF Técnico (Bytes32 / SHA-256)</label>
+                        <input type="text" id="inputHash" placeholder="0xa1b2c3d4..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <button onclick="entregarHashReporte()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition text-sm shadow-lg cursor-pointer">
+                        Registrar Hash de Auditoría
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel Consorcio -->
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                <div class="border-b border-slate-800 pb-3">
+                    <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">🏛️ Panel del Consorcio (Owner)</h2>
+                    <p class="text-xs text-slate-400">Verificación y liberación automática de pago</p>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <p class="text-xs text-slate-400">Aprueba el reporte de vulnerabilidades para liberar los fondos en ETH al auditor de forma automática.</p>
+                    <button onclick="aprobarYLiberarPago()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2.5 rounded-xl transition text-sm shadow-lg cursor-pointer">
+                        Aprobar Reporte y Liberar Pago (ETH)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT DE LÓGICA -->
+    <script>
+        const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+        
+        const CONTRACT_ABI = [
+            "function owner() view returns (address)",
+            "function auditor() view returns (address)",
+            "function presupuesto() view returns (uint256)",
+            "function hashReporte() view returns (bytes32)",
+            "function estadoAudit() view returns (uint8)",
+            "function entregarReporte(bytes32 _hashReporte) external",
+            "function aprobarYLiberarPago() external"
+        ];
+
+        const NOMBRES_ESTADO = ["Creada (Esperando Auditor)", "Aceptada", "Reporte Entregado", "Aprobada y Pagada"];
+
+        let provider;
+        let signer;
+        let contract;
+        let walletConectada = false;
+
+        async function iniciarModoLectura() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+                    await actualizarDatosUI();
+                } catch (err) {
+                    console.log("Iniciando en modo espera...", err);
+                }
+            }
+        }
+
+        async function gestionarConexionWallet() {
+            if (walletConectada) {
+                walletConectada = false;
+                signer = null;
+                document.getElementById('badgeEstadoWallet').className = "px-3 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-medium rounded-full flex items-center gap-1.5";
+                document.getElementById('badgeEstadoWallet').innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Modo Lectura';
+                document.getElementById('btnWallet').innerText = "🦊 Conectar Wallet";
+                document.getElementById('readOnlyAlert').style.display = "flex";
+                alert("Wallet desconectada.");
+                return;
+            }
+
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+                    walletConectada = true;
+                    const addrCorta = accounts[0].substring(0, 6) + "..." + accounts[0].substring(38);
+                    
+                    document.getElementById('badgeEstadoWallet').className = "px-3 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-medium rounded-full flex items-center gap-1.5";
+                    document.getElementById('badgeEstadoWallet').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ${addrCorta}`;
+                    document.getElementById('btnWallet').innerText = "🔴 Desconectar Wallet";
+                    document.getElementById('readOnlyAlert').style.display = "none";
+
+                    await actualizarDatosUI();
+                    alert("¡Wallet conectada con éxito!");
+                } catch (error) {
+                    console.error("Error al conectar wallet:", error);
+                    if (error.code !== 4001) {
+                        alert("Conexión cancelada o error en la red local.");
+                    }
+                }
+            } else {
+                alert("No se detectó ninguna extensión de billetera Web3 instalada en este navegador.");
+            }
+        }
+
+        async function actualizarDatosUI() {
+            if (!contract) return;
+            try {
+                const ownerAddr = await contract.owner().catch(() => null);
+                const auditorAddr = await contract.auditor().catch(() => null);
+                const presupuesto = await contract.presupuesto().catch(() => null);
+                const hash = await contract.hashReporte().catch(() => null);
+                const estado = await contract.estadoAudit().catch(() => null);
+
+                if (ownerAddr && ownerAddr !== "0x0000000000000000000000000000000000000000") {
+                    document.getElementById('txtOwner').innerText = ownerAddr;
+                }
+
+                if (auditorAddr && auditorAddr !== "0x0000000000000000000000000000000000000000") {
+                    document.getElementById('txtAuditor').innerText = auditorAddr;
+                }
+
+                if (presupuesto !== null) {
+                    document.getElementById('txtPresupuesto').innerText = ethers.formatEther(presupuesto) + " ETH";
+                }
+
+                // 🛡️ Blindaje de Hash para que no se sobrescriba si la lectura viene vacía
+                if (hash && hash !== "0x0000000000000000000000000000000000000000000000000000000000000000") {
+                    document.getElementById('txtHashReporte').innerText = hash;
+                }
+
+                if (estado !== null) {
+                    const estadoNum = Number(estado);
+                    const estadoTexto = NOMBRES_ESTADO[estadoNum] || "Creada (Esperando Auditor)";
+                    const txtEstadoEl = document.getElementById('txtEstado');
+                    
+                    txtEstadoEl.innerText = estadoTexto;
+
+                    if (estadoNum >= 2) {
+                        txtEstadoEl.className = "text-lg font-bold text-emerald-400 mt-1";
+                    } else {
+                        txtEstadoEl.className = "text-lg font-bold text-amber-400 mt-1";
+                    }
+                }
+            } catch (err) {
+                console.error("Error leyendo contrato:", err);
+            }
+        }
+
+        async function entregarHashReporte() {
+            if (!walletConectada) {
+                alert("Conecta tu wallet primero.");
+                return;
+            }
+            const hashVal = document.getElementById('inputHash').value.trim();
+            if (!hashVal) {
+                alert("Ingresa un hash válido.");
+                return;
+            }
+            try {
+                const tx = await contract.entregarReporte(hashVal);
+                alert("Transacción enviada. Esperando confirmación...");
+                await tx.wait();
+                
+                // 🔄 Actualización visual inmediata y permanente
+                document.getElementById('txtHashReporte').innerText = hashVal;
+                const txtEstadoEl = document.getElementById('txtEstado');
+                txtEstadoEl.innerText = "Reporte Entregado";
+                txtEstadoEl.className = "text-lg font-bold text-emerald-400 mt-1";
+                
+                alert("¡Hash registrado con éxito!");
+                await actualizarDatosUI();
+            } catch (err) {
+                alert("Error: " + (err.reason || err.message));
+            }
+        }
+
+        async function aprobarYLiberarPago() {
+            if (!walletConectada) {
+                alert("Conecta tu wallet como Consorcio.");
+                return;
+            }
+            try {
+                const tx = await contract.aprobarYLiberarPago();
+                alert("Liberando fondos en ETH...");
+                await tx.wait();
+                
+                // 🔄 Actualización visual inmediata y permanente a pagado en verde
+                document.getElementById('txtPresupuesto').innerText = "0.0 ETH";
+                const txtEstadoEl = document.getElementById('txtEstado');
+                txtEstadoEl.innerText = "Aprobada y Pagada";
+                txtEstadoEl.className = "text-lg font-bold text-emerald-400 mt-1";
+                
+                alert("¡Pago liberado con éxito!");
+                await actualizarDatosUI();
+            } catch (err) {
+                alert("Error: " + (err.reason || err.message));
+            }
+        }
+
+        window.onload = iniciarModoLectura;
+    </script>
+</body>
+</html>
