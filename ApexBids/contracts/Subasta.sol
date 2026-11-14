@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 contract Subasta {
-    // ---------- Estado ----------
+    //Estado
     address public owner;
     string public nombreArticulo;
     uint256 public precioMinimo;
@@ -11,15 +11,13 @@ contract Subasta {
     uint256 public mejorOferta;
     bool public finalizada;
 
-    // Reembolsos pendientes: quien fue superado cobra de aquí
+    //Reembolsos pendientes para quienes no tenga la oferta lider
     mapping(address => uint256) public ofertas;
 
-    // ---------- Eventos (historial sin base de datos) ----------
     event OfertaRecibida(address indexed postor, uint256 monto);
     event SubastaFinalizada(address indexed ganador, uint256 monto);
     event OfertaRetirada(address indexed postor, uint256 monto);
 
-    // ---------- Modifiers ----------
     modifier soloOwner() {
         require(msg.sender == owner, "Solo el owner puede hacer esto");
         _;
@@ -36,7 +34,6 @@ contract Subasta {
         _;
     }
 
-    // ---------- Constructor ----------
     constructor(
         string memory _nombre,
         uint256 _precioMinimo,
@@ -51,13 +48,13 @@ contract Subasta {
         finSubasta = block.timestamp + (_duracionMinutos * 1 minutes);
     }
 
-    // ---------- PAGO EN CRIPTO #1: el postor manda ETH ----------
+    //Funcion para realizar oferta 
     function ofertar() external payable subastaActiva {
         require(msg.sender != owner, "El owner no puede ofertar");
         require(msg.value > mejorOferta, "Tu oferta debe superar la actual");
         require(msg.value >= precioMinimo, "No alcanza el precio minimo");
 
-        // El postor anterior queda con reembolso pendiente
+        //El postor anterior queda con reembolso pendiente
         if (mejorPostor != address(0)) {
             ofertas[mejorPostor] += mejorOferta;
         }
@@ -68,7 +65,7 @@ contract Subasta {
         emit OfertaRecibida(msg.sender, msg.value);
     }
 
-    // ---------- Retiro de ofertas superadas ----------
+    //Funcion para retirar ofertas superadas
     function retirarOferta() external {
         require(msg.sender != mejorPostor, "Eres el lider, no puedes retirar tu oferta");
 
@@ -82,7 +79,7 @@ contract Subasta {
         emit OfertaRetirada(msg.sender, monto);
     }
 
-    // ---------- PAGO EN CRIPTO #2: el owner cobra al cerrar ----------
+    //El owner cobra al finalizar y cerrar la subasta
     function finalizar() external soloOwner {
         require(!finalizada, "Ya esta finalizada");
         require(block.timestamp >= finSubasta, "Aun no termina el tiempo");
@@ -96,7 +93,7 @@ contract Subasta {
         }
     }
 
-    // ---------- Lecturas para el frontend ----------
+    //Funciones para mostrar informacion en el frontend
     function verSubasta()
         external
         view
