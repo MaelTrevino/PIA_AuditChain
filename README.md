@@ -37,3 +37,48 @@ Para ejecutar el proyecto desde cero en una computadora local, se requieren **No
 git clone <URL-DEL-REPOSITORIO>
 cd ApexBids
 npm install
+```
+2. Levantar el entorno (3 Terminales)
+Abre tres ventanas de terminal en la carpeta raíz del proyecto y ejecuta los siguientes comandos en orden:
+Terminal 1 - Iniciar la Blockchain Local:
+```bash
+npx hardhat node
+```
+(Mantén esta ventana abierta; generará 20 cuentas de prueba con 10,000 ETH simulados)
+
+Terminal 2 - Desplegar el Smart Contract:
+```bash
+npx hardhat run scripts/deploySubastas.ts --network localhost
+```
+(Verifica que la dirección del contrato impresa en consola coincida con CONTRACT_ADDRESS en index.html).
+
+Terminal 3 - Servir la Interfaz Web:
+```bash
+npx serve . -p 5500
+```
+(Abre tu navegador la dirección http://localhost:5500).
+
+Instrucciones de Uso para el Usuario
+
+Paso 1: Configurar MetaMask en la red local
+1. Abre MetaMask, despliega el selector de redes y agrega una red manualmente con los siguientes parámetros:
+
+-Nombre de red: Hardhat Local
+-Nueva URL de RPC: http://127.0.0.1:8545
+-Identificador de cadena (Chain ID): 31337
+-Símbolo de moneda: ETH
+2. Importa al menos dos cuentas usando las llaves privadas que aparecen en la Terminal 1 (la Cuenta #0 actúa como el Propietario/Owner que desplegó el contrato; la Cuenta #1 en adelante actúan como Postores).
+
+Paso 2: Exploración en Modo Público (Sin Wallet)
+Al ingresar a http://localhost:5500, podrás consultar el artículo en subasta, el precio base, la mejor oferta actual y el cronómetro regresivo. Si intentas ofertar o retirar sin conectar tu wallet, el sistema bloqueará la acción.
+
+Paso 3: Participar como Postor (Interfaz Clara)
+1. Haz clic en Conectar Wallet y selecciona una cuenta distinta a la del creador del contrato (ej. Cuenta #1).
+2. La interfaz cambiará automáticamente a Modo Postor.
+2. Ingresa un monto en ETH superior a la oferta actual en el apartado Enviar Puja y haz clic en Confirmar Puja en Blockchain. Confirma la transacción en MetaMask.
+4. Si otro postor supera tu oferta, el monto anterior aparecerá disponible en la tarjeta Reembolsos Pendientes, donde podrás recuperarlo haciendo clic en Retirar Saldo Superado.
+
+Paso 4: Administrar como Propietario (Interfaz Oscura)
+1. Desconecta la cuenta actual usando el botón Desconectar Wallet y vuelve a conectar seleccionando la Cuenta #0 (Deployer).
+2. La interfaz cambiará al Panel de Propietario en tema oscuro.
+3. Una vez que el cronómetro de cierre llegue a 00:00, haz clic en Finalizar Subasta y Cobrar Fondos para dar por terminado el contrato y transferir el monto ganador a la wallet del propietario.
