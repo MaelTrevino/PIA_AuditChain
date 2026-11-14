@@ -25,6 +25,9 @@ Características principales
 - Interacción con contratos inteligentes.
 - Ejecución descentralizada de las operaciones.
 
+Propósito
+El proyecto busca demostrar la aplicación de tecnologías blockchain en sistemas de comercio digital, explorando el uso de contratos inteligentes y wallets para desarrollar un entorno de subastas transparente, seguro y descentralizado.
+
 Guía de Instalación y Despliegue (Entorno Local)
 
 Para ejecutar el proyecto desde cero en una computadora local, se requieren **Node.js** instalado y la extensión **MetaMask** en el navegador.
@@ -34,6 +37,3 @@ Para ejecutar el proyecto desde cero en una computadora local, se requieren **No
 git clone <URL-DEL-REPOSITORIO>
 cd ApexBids
 npm install
-
-Propósito
-El proyecto busca demostrar la aplicación de tecnologías blockchain en sistemas de comercio digital, explorando el uso de contratos inteligentes y wallets para desarrollar un entorno de subastas transparente, seguro y descentralizado.
