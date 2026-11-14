@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApexBids | Plataforma de Subastas Descentralizadas</title>
+    <!-- Favicon SVG de ApexBids -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><polygon points=%2232,12 10,54 54,54%22 fill=%22none%22 stroke=%22%2310b981%22 stroke-width=%224%22/><circle cx=%2232%22 cy=%2236%22 r=%225%22 fill=%22%2314b8a6%22/></svg>">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Ethers.js v6 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+</head>
+<body id="appBody" class="bg-slate-50 text-slate-900 font-sans min-h-screen p-4 md:p-8 transition-colors duration-300">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <!-- ENCABEZADO PRINCIPAL -->
+        <header id="mainHeader" class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-300">
+            <div class="flex items-center gap-4">
+                <!-- Logo Vectorial ApexBids (Cima + Nodos Blockchain + Martillo) -->
+                <div class="w-14 h-14 bg-slate-900 border border-emerald-500/40 rounded-2xl flex items-center justify-center shadow-md shrink-0">
+                    <svg class="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="apexGrad" x1="8" y1="54" x2="56" y2="10" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#10b981"/>
+                                <stop offset="100%" stop-color="#06b6d4"/>
+                            </linearGradient>
+                        </defs>
+                        <!-- Arco superior -->
+                        <path d="M18 18 A 18 18 0 0 1 46 18" stroke="url(#apexGrad)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+                        <!-- Martillo geométrico en la cima -->
+                        <g transform="rotate(-35 32 13)">
+                            <rect x="26" y="8" width="12" height="6" rx="1.5" fill="url(#apexGrad)"/>
+                            <rect x="30.5" y="14" width="3" height="9" rx="1" fill="#34d399"/>
+                        </g>
+                        <!-- Cima / Montaña Apex -->
+                        <polygon points="32,20 11,54 53,54" stroke="url(#apexGrad)" stroke-width="3" stroke-linejoin="round" fill="#10b981" fill-opacity="0.12"/>
+                        <!-- Red de nodos interna -->
+                        <line x1="23" y1="45" x2="32" y2="35" stroke="#34d399" stroke-width="2"/>
+                        <line x1="41" y1="45" x2="32" y2="35" stroke="#34d399" stroke-width="2"/>
+                        <circle cx="32" cy="35" r="3" fill="#0f172a" stroke="#34d399" stroke-width="2"/>
+                        <circle cx="23" cy="45" r="2.5" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
+                        <circle cx="41" cy="45" r="2.5" fill="#0f172a" stroke="#06b6d4" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 id="txtBrandTitle" class="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2.5">
+                        ApexBids 
+                        <span id="badgeRolUI" class="text-xs font-mono font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                            Modo Público
+                        </span>
+                    </h1>
+                    <p id="txtBrandSubtitle" class="text-xs text-slate-500 mt-0.5">Plataforma descentralizada de subastas con detección inteligente de roles</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <span id="badgeEstadoWallet" class="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium rounded-full flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Desconectado
+                </span>
+                <button id="btnWallet" onclick="gestionarConexionWallet()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-xl transition text-sm shadow-sm cursor-pointer">
+                    Conectar Wallet
+                </button>
+            </div>
+        </header>
+
+        <!-- ALERTA INFORMATIVA -->
+        <div id="readOnlyAlert" class="bg-sky-50 border border-sky-200 p-4 rounded-xl text-sm text-sky-800 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-5 h-5 text-sky-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p>Conecta tu billetera Web3 para detectar automáticamente tu rol como <strong>Postor</strong> o <strong>Propietario</strong> de la subasta.</p>
+            </div>
+        </div>
+
+        <!-- ================= VISTA COMÚN: ESTADO DE LA SUBASTA ================= -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="theme-card bg-white border border-slate-200 p-5 rounded-2xl shadow-sm transition-colors duration-300">
+                <p class="theme-label text-xs text-slate-500 font-mono uppercase tracking-wider">Artículo en Subasta</p>
+                <p id="txtNombreArticulo" class="theme-value text-lg font-bold text-slate-900 mt-1">Cargando...</p>
+                <p class="theme-subtext text-xs text-slate-500 mt-1">Piso mínimo: <span id="txtPrecioMin" class="font-mono font-semibold text-emerald-600">0 ETH</span></p>
+            </div>
+            <div class="theme-card bg-white border border-slate-200 p-5 rounded-2xl shadow-sm transition-colors duration-300">
+                <p class="theme-label text-xs text-slate-500 font-mono uppercase tracking-wider">Mejor Oferta Actual</p>
+                <p id="txtMejorOferta" class="text-lg font-bold text-emerald-600 mt-1">0.0 ETH</p>
+                <p class="theme-subtext text-xs text-slate-500 mt-1 truncate">Líder: <span id="txtLider" class="theme-lider font-mono text-slate-700">Ninguno</span></p>
+            </div>
+            <div class="theme-card bg-white border border-slate-200 p-5 rounded-2xl shadow-sm transition-colors duration-300">
+                <p class="theme-label text-xs text-slate-500 font-mono uppercase tracking-wider">Cronómetro de Cierre</p>
+                <p id="txtTiempoRestante" class="text-lg font-bold text-amber-600 mt-1 font-mono">--:--</p>
+                <p class="theme-subtext text-xs text-slate-500 mt-1">Estatus: <span id="txtTerminada" class="font-mono font-semibold text-emerald-600">Activa</span></p>
+            </div>
+        </section>
+
+
+        <!-- ================= VISTA 1: INTERFAZ DE POSTOR (MODO CLARO / BLANCO) ================= -->
+        <div id="vistaPostor" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Tarjeta del Producto -->
+            <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <h2 class="text-base font-bold text-slate-800">Lote en Sala / Exhibición</h2>
+                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs rounded-full font-mono font-medium">Verificado</span>
+                </div>
+                
+                <div class="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-video flex items-center justify-center">
+                    <img src="https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=800&q=80" alt="Laptop Dell" class="w-full h-full object-cover">
+                    <div class="absolute bottom-3 left-3 bg-slate-900/85 backdrop-blur px-3 py-1.5 rounded-lg text-xs font-mono text-white">
+                        Intel Core i7 | 16GB RAM | 512GB SSD
+                    </div>
+                </div>
+
+                <div class="space-y-1.5 text-xs text-slate-600 pt-1">
+                    <p>• <strong class="text-slate-800">Pantalla:</strong> 15.6" Full HD Táctil (1920x1080)</p>
+                    <p>• <strong class="text-slate-800">Procesador:</strong> Intel Core i7-1355U</p>
+                    <p>• <strong class="text-slate-800">Gráficos:</strong> Intel Iris Xe Graphics</p>
+                </div>
+            </div>
+
+            <!-- Panel de Ofertas y Reembolsos del Postor -->
+            <div class="space-y-6 flex flex-col justify-between">
+                <!-- Sub-panel Ofertar -->
+                <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-4">
+                    <div class="border-b border-slate-100 pb-3">
+                        <h2 class="text-base font-bold text-slate-800">Enviar Puja (Ofertar)</h2>
+                        <p class="text-xs text-slate-500">Supera la oferta actual enviando ETH al contrato inteligente</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Monto a ofertar (en ETH)</label>
+                        <input type="number" step="0.01" id="inputMontoOferta" placeholder="Ej. 1.5" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-mono text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white transition">
+                    </div>
+                    <button onclick="realizarOferta()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl transition text-sm shadow-sm cursor-pointer">
+                        Confirmar Puja en Blockchain
+                    </button>
+                </div>
+
+                <!-- Sub-panel Reembolsos -->
+                <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-4">
+                    <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800">Reembolsos Pendientes</h2>
+                            <p class="text-xs text-slate-500">Recupera tus fondos si tu puja fue superada</p>
+                        </div>
+                        <p id="txtMiOfertaReembolso" class="text-sm font-bold font-mono text-sky-700 bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-200">0.0 ETH</p>
+                    </div>
+                    <button onclick="retirarFondos()" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 rounded-xl transition text-sm shadow-sm cursor-pointer">
+                        Retirar Saldo Superado
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ================= VISTA 2: INTERFAZ DE PROPIETARIO (MODO OSCURO / SUBASTADOR) ================= -->
+        <div id="vistaPropietario" class="hidden grid-cols-1 gap-6">
+            
+            <div class="bg-slate-900 border border-amber-500/30 p-6 rounded-2xl space-y-6 shadow-2xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-400">Pantalla del Subastador (Control de Propietario)</h2>
+                        <p class="text-xs text-slate-400">Supervisión en tiempo real de la carrera de pujas y adjudicación definitiva del contrato.</p>
+                    </div>
+                    <span class="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-mono rounded-full">Rol: Owner Autorizado</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Propietario Legítimo</p>
+                        <p class="text-sm font-mono text-slate-200 mt-1 truncate">Cuenta Principal (Deployer)</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Ganador Potencial Actual</p>
+                        <p id="txtOwnerLiderDisplay" class="text-sm font-mono text-emerald-400 mt-1 truncate">Ninguno</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Acción Requerida</p>
+                        <p class="text-sm font-mono text-amber-300 mt-1">Esperando cierre del cronómetro</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                    <p class="text-xs font-mono uppercase tracking-wider text-slate-400">Estado de Adjudicación y Reglas del Contrato</p>
+                    <div class="flex items-center justify-between text-xs text-slate-300 border-b border-slate-900 pb-2">
+                        <span>Validación de Reglas de Cierre:</span>
+                        <span class="text-emerald-400 font-mono">OK (Requiere tiempo agotado)</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-slate-300 pb-1">
+                        <span>Transferencia automática de fondos al cerrar:</span>
+                        <span class="text-amber-400 font-mono">Habilitada hacia el Owner</span>
+                    </div>
+                </div>
+
+                <button onclick="finalizarSubastaOwner()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-3 rounded-xl transition text-sm shadow-lg shadow-amber-950/50 cursor-pointer">
+                    Finalizar Subasta y Cobrar Fondos
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- SCRIPT DE LÓGICA, DETECCIÓN DE ROLES Y CAMBIO DE TEMA -->
+    <script>
+        const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+        
+        const CONTRACT_ABI = [
+            "function ofertar() external payable",
+            "function retirarOferta() external",
+            "function finalizar() external",
+            "function verSubasta() external view returns (string memory, uint256, uint256, address, uint256, bool)",
+            "function miOferta() external view returns (uint256)",
+            "function soyOwner() external view returns (bool)",
+            "function ofertas(address) external view returns (uint256)"
+        ];
+
+        let provider;
+        let signer;
+        let contract;
+        let walletConectada = false;
+        let segundosLocales = 0;
+        let cronometroIniciado = false;
+
+        // Cambia dinámicamente entre Tema Oscuro (Owner) y Tema Blanco/Claro (Postor / Público)
+        function aplicarTemaVisual(esOwner) {
+            const body = document.getElementById('appBody');
+            const header = document.getElementById('mainHeader');
+            const title = document.getElementById('txtBrandTitle');
+            const subtitle = document.getElementById('txtBrandSubtitle');
+            const cards = document.querySelectorAll('.theme-card');
+            const values = document.querySelectorAll('.theme-value');
+            const lider = document.querySelector('.theme-lider');
+
+            if (esOwner) {
+                // MODO OSCURO (OWNER)
+                body.className = "bg-slate-950 text-slate-100 font-sans min-h-screen p-4 md:p-8 transition-colors duration-300";
+                header.className = "bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-300";
+                title.className = "text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5";
+                subtitle.className = "text-xs text-slate-400 mt-0.5";
+
+                cards.forEach(c => c.className = "theme-card bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-sm transition-colors duration-300");
+                values.forEach(v => v.className = "theme-value text-lg font-bold text-white mt-1");
+                if (lider) lider.className = "theme-lider font-mono text-slate-300";
+            } else {
+                // MODO CLARO / BLANCO (POSTOR O PÚBLICO)
+                body.className = "bg-slate-50 text-slate-900 font-sans min-h-screen p-4 md:p-8 transition-colors duration-300";
+                header.className = "bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-300";
+                title.className = "text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2.5";
+                subtitle.className = "text-xs text-slate-500 mt-0.5";
+
+                cards.forEach(c => c.className = "theme-card bg-white border border-slate-200 p-5 rounded-2xl shadow-sm transition-colors duration-300");
+                values.forEach(v => v.className = "theme-value text-lg font-bold text-slate-900 mt-1");
+                if (lider) lider.className = "theme-lider font-mono text-slate-700";
+            }
+        }
+
+        async function iniciarModoLectura() {
+            aplicarTemaVisual(false);
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+                    await actualizarDatosUI();
+                } catch (err) {
+                    console.log("Esperando conexión de wallet...", err);
+                }
+            }
+        }
+
+        async function gestionarConexionWallet() {
+            if (walletConectada) {
+                walletConectada = false;
+                signer = null;
+                aplicarTemaVisual(false);
+
+                document.getElementById('badgeEstadoWallet').className = "px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium rounded-full flex items-center gap-1.5";
+                document.getElementById('badgeEstadoWallet').innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Desconectado';
+                document.getElementById('badgeRolUI').innerText = "Modo Público";
+                document.getElementById('badgeRolUI').className = "text-xs font-mono font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md border border-emerald-200";
+                document.getElementById('btnWallet').innerText = "Conectar Wallet";
+                document.getElementById('readOnlyAlert').style.display = "flex";
+                
+                document.getElementById('vistaPostor').classList.remove('hidden');
+                document.getElementById('vistaPropietario').classList.add('hidden');
+                alert("Wallet desconectada.");
+                return;
+            }
+
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+                    walletConectada = true;
+                    const addrCorta = accounts[0].substring(0, 6) + "..." + accounts[0].substring(38);
+                    
+                    document.getElementById('btnWallet').innerText = "Desconectar Wallet";
+                    document.getElementById('readOnlyAlert').style.display = "none";
+
+                    await actualizarDatosUI();
+                    alert("Wallet conectada con éxito.");
+                } catch (error) {
+                    console.error("Error al conectar wallet:", error);
+                    if (error.code !== 4001) {
+                        alert("Conexión cancelada o error en la red local.");
+                    }
+                }
+            } else {
+                alert("No se detectó ninguna extensión de billetera Web3 instalada en este navegador.");
+            }
+        }
+
+        function formatearTiempo(segundosTotales) {
+            if (segundosTotales <= 0) return "00:00 (Tiempo agotado)";
+            const mins = Math.floor(segundosTotales / 60).toString().padStart(2, '0');
+            const segs = (segundosTotales % 60).toString().padStart(2, '0');
+            return `${mins}:${segs}`;
+        }
+
+        async function actualizarDatosUI() {
+            if (!contract) return;
+            try {
+                const subastaInfo = await contract.verSubasta().catch(() => null);
+                
+                if (subastaInfo) {
+                    document.getElementById('txtNombreArticulo').innerText = subastaInfo[0];
+                    document.getElementById('txtPrecioMin').innerText = ethers.formatEther(subastaInfo[1]) + " ETH";
+                    
+                    const tiempoContrato = Number(subastaInfo[2]);
+                    if (!cronometroIniciado || tiempoContrato < segundosLocales) {
+                        segundosLocales = tiempoContrato;
+                        cronometroIniciado = true;
+                        document.getElementById('txtTiempoRestante').innerText = formatearTiempo(segundosLocales);
+                    }
+                    
+                    const liderAddr = subastaInfo[3];
+                    const liderTexto = liderAddr === "0x0000000000000000000000000000000000000000" ? "Ninguno" : liderAddr.substring(0,6) + "..." + liderAddr.substring(38);
+                    
+                    document.getElementById('txtLider').innerText = liderTexto;
+                    document.getElementById('txtOwnerLiderDisplay').innerText = liderTexto;
+                    document.getElementById('txtMejorOferta').innerText = ethers.formatEther(subastaInfo[4]) + " ETH";
+                    
+                    const terminada = subastaInfo[5];
+                    const estatusEl = document.getElementById('txtTerminada');
+                    estatusEl.innerText = terminada ? "Finalizada" : "Activa";
+                    estatusEl.className = terminada ? "font-mono font-semibold text-amber-500" : "font-mono font-semibold text-emerald-600";
+                }
+
+                if (walletConectada && signer) {
+                    const esOwner = await contract.soyOwner().catch(() => false);
+                    const userAddr = await signer.getAddress();
+                    const addrCorta = userAddr.substring(0, 6) + "..." + userAddr.substring(38);
+
+                    aplicarTemaVisual(esOwner);
+                    
+                    if (esOwner) {
+                        // CONFIGURACIÓN VISTA PROPIETARIO (OSCURA)
+                        document.getElementById('vistaPostor').classList.add('hidden');
+                        document.getElementById('vistaPropietario').classList.remove('hidden');
+                        
+                        document.getElementById('badgeRolUI').innerText = "Panel Propietario / Subastador";
+                        document.getElementById('badgeRolUI').className = "text-xs font-mono font-semibold bg-amber-500/20 text-amber-400 px-2.5 py-0.5 rounded-md border border-amber-500/30";
+                        
+                        document.getElementById('badgeEstadoWallet').className = "px-3 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-medium rounded-full flex items-center gap-1.5";
+                        document.getElementById('badgeEstadoWallet').innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> ${addrCorta}`;
+                    } else {
+                        // CONFIGURACIÓN VISTA POSTOR (BLANCA / CLARA)
+                        document.getElementById('vistaPostor').classList.remove('hidden');
+                        document.getElementById('vistaPropietario').classList.add('hidden');
+                        
+                        document.getElementById('badgeRolUI').innerText = "Modo Postor";
+                        document.getElementById('badgeRolUI').className = "text-xs font-mono font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-md border border-emerald-200";
+                        
+                        document.getElementById('badgeEstadoWallet').className = "px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-medium rounded-full flex items-center gap-1.5";
+                        document.getElementById('badgeEstadoWallet').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> ${addrCorta}`;
+
+                        const reembolso = await contract.miOferta().catch(() => 0n);
+                        document.getElementById('txtMiOfertaReembolso').innerText = ethers.formatEther(reembolso) + " ETH";
+                    }
+                } else {
+                    document.getElementById('vistaPostor').classList.remove('hidden');
+                    document.getElementById('vistaPropietario').classList.add('hidden');
+                    document.getElementById('txtMiOfertaReembolso').innerText = "0.0 ETH";
+                }
+
+            } catch (err) {
+                console.error("Error leyendo contrato de subasta:", err);
+            }
+        }
+
+        async function realizarOferta() {
+            if (!walletConectada) {
+                alert("Conecta tu wallet primero.");
+                return;
+            }
+            const montoStr = document.getElementById('inputMontoOferta').value.trim();
+            if (!montoStr || isNaN(montoStr) || Number(montoStr) <= 0) {
+                alert("Ingresa un monto válido en ETH para ofertar.");
+                return;
+            }
+
+            try {
+                const montoWei = ethers.parseEther(montoStr);
+                const tx = await contract.ofertar({ value: montoWei });
+                alert("Transacción de oferta enviada. Esperando confirmación...");
+                await tx.wait();
+                
+                alert("Puja registrada con éxito en la blockchain.");
+                document.getElementById('inputMontoOferta').value = "";
+                await actualizarDatosUI();
+            } catch (err) {
+                alert("Error en oferta: " + (err.reason || err.message));
+            }
+        }
+
+        async function retirarFondos() {
+            if (!walletConectada) {
+                alert("Conecta tu wallet primero.");
+                return;
+            }
+            try {
+                const tx = await contract.retirarOferta();
+                alert("Procesando retiro de fondos...");
+                await tx.wait();
+                
+                alert("Fondos retirados con éxito a tu wallet.");
+                await actualizarDatosUI();
+            } catch (err) {
+                alert("Error al retirar: " + (err.reason || err.message));
+            }
+        }
+
+        async function finalizarSubastaOwner() {
+            if (!walletConectada) {
+                alert("Conecta tu wallet primero.");
+                return;
+            }
+            try {
+                const tx = await contract.finalizar();
+                alert("Cerrando subasta...");
+                await tx.wait();
+                
+                alert("Subasta finalizada con éxito y fondos entregados al propietario.");
+                await actualizarDatosUI();
+            } catch (err) {
+                alert("Error al finalizar: " + (err.reason || err.message));
+            }
+        }
+
+        setInterval(() => {
+            if (cronometroIniciado && segundosLocales > 0) {
+                segundosLocales--;
+                document.getElementById('txtTiempoRestante').innerText = formatearTiempo(segundosLocales);
+            }
+        }, 1000);
+
+        setInterval(actualizarDatosUI, 5000);
+
+        window.onload = iniciarModoLectura;
+    </script>
+</body>
+</html>
