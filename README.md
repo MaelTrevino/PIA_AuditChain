@@ -9,6 +9,7 @@ Tecnologías utilizadas
 - Solana: Blockchain utilizada para la interacción con una red descentralizada.
 - MetaMask: Wallet de software para la conexión y gestión de la identidad digital de los usuarios.
 - Hardhat: Entorno de desarrollo para la compilación, despliegue y pruebas de contratos inteligentes.
+- HTML5 & Tailwind CSS: Interfaz de usuario responsiva con cambio dinámico de tema según el rol detectado (Modo Claro para Postores / Modo Oscuro para Propietario).
 
 Objetivos
 - Desarrollar una plataforma de subastas basada en tecnología blockchain.
@@ -23,6 +24,16 @@ Características principales
 - Registro y gestión de ofertas.
 - Interacción con contratos inteligentes.
 - Ejecución descentralizada de las operaciones.
+
+Guía de Instalación y Despliegue (Entorno Local)
+
+Para ejecutar el proyecto desde cero en una computadora local, se requieren **Node.js** instalado y la extensión **MetaMask** en el navegador.
+
+1. Clonar e instalar dependencias
+```bash
+git clone <URL-DEL-REPOSITORIO>
+cd ApexBids
+npm install
 
 Propósito
 El proyecto busca demostrar la aplicación de tecnologías blockchain en sistemas de comercio digital, explorando el uso de contratos inteligentes y wallets para desarrollar un entorno de subastas transparente, seguro y descentralizado.
